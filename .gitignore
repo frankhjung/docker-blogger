@@ -1,6 +1,7 @@
 *~
 *.bak
 cache/
+*.code-workspace
 *,cover
 doc/
 *.docx
