@@ -1,111 +1,103 @@
-# blogspot-publishing
+# Blogspot Publishing Action
 
-Utility to publish a blog to Blogspot.
+A GitHub Action to publish articles (HTML/Markdown) to a [Blogger](https://www.blogger.com) (Blogspot) blog using the Blogger API v3.
 
-## Setup
+This action supports:
 
-This project uses [uv](https://docs.astral.sh/uv/) for dependency management and running Python tools.
+- **Publishing Drafts**: New posts are created as drafts by default.
+- **Idempotency**: If a post with the same title already exists, it updates the existing post (content only) instead of creating a duplicate.
+- **OAuth 2.0**: Secure authentication using Google OAuth 2.0 Refresh Tokens.
+
+## Usage
 
 ### Prerequisites
 
-- Python 3.9 or higher
-- [uv](https://docs.astral.sh/uv/) package manager
+To use this action, you need to set up Google API credentials.
+Please refer to [docs/authentication_setup.md](docs/authentication_setup.md) for detailed instructions on how to obtain your:
 
-### Installation
+- `CLIENT_ID`
+- `CLIENT_SECRET`
+- `REFRESH_TOKEN`
+- `BLOG_ID`
 
-Install dependencies:
+### Example Workflow
+
+Add this step to your GitHub Actions workflow (e.g., `.github/workflows/publish.yml`):
+
+```yaml
+steps:
+  - name: Checkout code
+    uses: actions/checkout@v4
+
+  - name: Render Markdown to HTML
+    # Assuming you have a step that generates the HTML content
+    run: |
+      pandoc post.md -o post.html
+
+  - name: Publish to Blogspot
+    uses: frankhjung/blogspot-publishing@main
+    with:
+      title: "My Awesome Post"
+      source-file: "post.html"
+      blog-id: ${{ secrets.BLOGGER_BLOG_ID }}
+      client-id: ${{ secrets.BLOGGER_CLIENT_ID }}
+      client-secret: ${{ secrets.BLOGGER_CLIENT_SECRET }}
+      refresh-token: ${{ secrets.BLOGGER_REFRESH_TOKEN }}
+      labels: "tech, tutorial"
+```
+
+### Inputs
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `title` | Title of the blog post | Yes | |
+| `source-file` | Path to the file containing the HTML content | Yes | |
+| `blog-id` | The ID of your Blogger blog | Yes | |
+| `client-id` | Google OAuth Client ID | Yes | |
+| `client-secret` | Google OAuth Client Secret | Yes | |
+| `refresh-token` | Google OAuth Refresh Token | Yes | |
+| `labels` | Comma-separated list of labels | No | |
+
+## Local Development
+
+You can build and test this action locally using the provided `Makefile`.
+
+### Local Prerequisites
+
+- [Docker](https://www.docker.com/)
+- [Python 3.9+](https://www.python.org/)
+- [uv](https://docs.astral.sh/uv/)
+
+### Build Commands
+
+The project includes a `Makefile` to simplify common tasks:
 
 ```bash
+# Install Python dependencies locally
 make install
-```
 
-Or using uv directly:
-
-```bash
-uv sync
-```
-
-## Development
-
-### Project Structure
-
-```
-blogspot-publishing/
-├── src/
-│   └── blogspot_publishing/    # Main package source code
-├── tests/                      # Test files
-├── pyproject.toml             # Project configuration
-├── uv.lock                    # Locked dependencies
-├── Makefile                   # Build automation
-└── README.md                  # This file
-```
-
-### Available Commands
-
-Run `make help` to see all available commands:
-
-```bash
-make help              # Show all available commands
-make install           # Install dependencies
-make format            # Format code with ruff
-make lint              # Lint code with ruff
-make lint-fix          # Fix linting issues automatically
-make test              # Run tests with pytest
-make test-verbose      # Run tests with verbose output
-make coverage          # Run tests with coverage report
-make check             # Run all checks (format, lint, test)
-make clean             # Clean build artifacts
-```
-
-### Running Commands
-
-All commands can be run with `make`:
-
-```bash
-# Install dependencies
-make install
-
-# Format code
-make format
-
-# Lint code
-make lint
-
-# Run tests
+# Run unit tests
 make test
 
-# Run all checks
-make check
+# Build the Docker image for the Action
+make build-image
+
+# Run the Docker container (sanity check - prints help)
+make test-container
 ```
 
-Or using uv directly:
+### Running the Action Locally
+
+You can run the Docker container directly to simulate the Action execution, provided you have a local file to publish and your credentials.
 
 ```bash
-# Format code
-uv run ruff format .
-
-# Lint code
-uv run ruff check .
-
-# Run tests
-uv run pytest
+docker run --rm \
+  -v $(pwd):/data \
+  blogspot-publishing \
+  --title "Test Post" \
+  --source-file "/data/test_article.html" \
+  --blog-id "YOUR_BLOG_ID" \
+  --client-id "YOUR_CLIENT_ID" \
+  --client-secret "YOUR_CLIENT_SECRET" \
+  --refresh-token "YOUR_REFRESH_TOKEN"
 ```
-
-## Testing
-
-Tests are located in the `tests/` directory and use pytest:
-
-```bash
-make test
-```
-
-## Code Quality
-
-This project uses:
-
-- **ruff** - For linting and formatting Python code
-- **pytest** - For running tests
-
-## License
-
-See [LICENSE](LICENSE) file for details.

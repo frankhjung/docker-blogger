@@ -1,0 +1,51 @@
+---
+
+name: 'Publish to Blogspot'
+description: 'Publishes a Markdown/HTML article to Blogspot using API v3'
+author: 'Frank Jung'
+branding:
+  icon: 'edit-2'
+  color: 'orange'
+
+inputs:
+  title:
+    description: 'Title of the blog post'
+    required: true
+  source-file:
+    description: 'Path to the HTML/Content file'
+    required: true
+  blog-id:
+    description: 'Blogger Blog ID'
+    required: true
+  client-id:
+    description: 'OAuth Client ID'
+    required: true
+  client-secret:
+    description: 'OAuth Client Secret'
+    required: true
+  refresh-token:
+    description: 'OAuth Refresh Token'
+    required: true
+  labels:
+    description: 'Comma-separated list of labels'
+    required: false
+    default: ''
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - --title
+    - ${{ inputs.title }}
+    - --source-file
+    - ${{ inputs.source-file }}
+    - --blog-id
+    - ${{ inputs.blog-id }}
+    - --client-id
+    - ${{ inputs.client-id }}
+    - --client-secret
+    - ${{ inputs.client-secret }}
+    - --refresh-token
+    - ${{ inputs.refresh-token }}
+    - --labels
+    - ${{ inputs.labels }}

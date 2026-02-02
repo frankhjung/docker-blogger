@@ -36,3 +36,13 @@ clean: ## Clean build artifacts
 
 cleanall: clean ## Clean all generated files including venv
 	@$(RM) -rf .venv
+
+# Docker targets
+build-image: ## Build the Docker image
+	@docker build -t blogspot-publishing .
+
+run-container: ## Run the Docker container (requires env vars or args)
+	@docker run --rm blogspot-publishing
+
+test-container: build-image ## Test the Docker image (sanity check)
+	@docker run --rm blogspot-publishing --help
