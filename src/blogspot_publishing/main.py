@@ -11,9 +11,21 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Publish content to Blogspot.")
+    """
+    CLI entry point to publish a blog post to Blogspot.
 
-    parser.add_argument("--title", required=True, help="Title of the blog post")
+    Reads command-line arguments for authentication credentials and post
+    content, then publishes the post using the Blogger API v3.
+
+    Exits with status code 1 on errors (file not found, publication failure).
+    """
+    parser = argparse.ArgumentParser(
+        description="Publish content to Blogspot."
+    )
+
+    parser.add_argument(
+        "--title", required=True, help="Title of the blog post"
+    )
     parser.add_argument(
         "--source-file",
         required=True,
@@ -21,8 +33,12 @@ def main():
     )
     parser.add_argument("--blog-id", required=True, help="Blogger Blog ID")
     parser.add_argument("--client-id", required=True, help="OAuth Client ID")
-    parser.add_argument("--client-secret", required=True, help="OAuth Client Secret")
-    parser.add_argument("--refresh-token", required=True, help="OAuth Refresh Token")
+    parser.add_argument(
+        "--client-secret", required=True, help="OAuth Client Secret"
+    )
+    parser.add_argument(
+        "--refresh-token", required=True, help="OAuth Refresh Token"
+    )
     parser.add_argument(
         "--labels",
         help="Comma-separated list of labels",
@@ -40,7 +56,11 @@ def main():
         content = f.read()
 
     # Parse labels
-    labels_list = [l.strip() for l in args.labels.split(",")] if args.labels else []
+    labels_list = (
+        [label.strip() for label in args.labels.split(",")]
+        if args.labels
+        else []
+    )
 
     try:
         publish_post(

@@ -36,7 +36,7 @@ class TestPublish(unittest.TestCase):
         self.assertIsNone(result)
 
     @patch("blogspot_publishing.publish.get_service")
-    def test_publish_post_insert(self, mock_get_service):
+    def test_publish_post_insert(self, mock_get_service: MagicMock) -> None:
         mock_get_service.return_value = self.mock_service
 
         # Mock search to return None (not found)
@@ -56,12 +56,12 @@ class TestPublish(unittest.TestCase):
 
         # Verify insert called
         self.mock_posts.insert.assert_called_once()
-        args, kwargs = self.mock_posts.insert.call_args
+        _, kwargs = self.mock_posts.insert.call_args
         self.assertEqual(kwargs["body"]["title"], "New Post")
         self.assertTrue(kwargs["isDraft"])  # Default is True
 
     @patch("blogspot_publishing.publish.get_service")
-    def test_publish_post_update(self, mock_get_service):
+    def test_publish_post_update(self, mock_get_service: MagicMock) -> None:
         mock_get_service.return_value = self.mock_service
 
         # Mock search to return found
@@ -80,7 +80,7 @@ class TestPublish(unittest.TestCase):
 
         # Verify update called
         self.mock_posts.update.assert_called_once()
-        args, kwargs = self.mock_posts.update.call_args
+        _, kwargs = self.mock_posts.update.call_args
         self.assertEqual(kwargs["postId"], "123")
         self.assertEqual(kwargs["body"]["content"], "New Content")
 

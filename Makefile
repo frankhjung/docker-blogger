@@ -1,6 +1,6 @@
 #!/usr/bin/make
 
-.PHONY: help install format lint test clean
+.PHONY: help install lock format lint test clean
 
 help: ## Show this help message
 	@echo "Available targets:"
@@ -8,6 +8,10 @@ help: ## Show this help message
 
 install: ## Install dependencies
 	@uv sync
+
+lock: ## Regenerate uv.lock file for reproducible builds
+	@uv lock
+	@echo "Lock file updated. Commit with: git add uv.lock"
 
 format: ## Format code with ruff
 	@uv run ruff format .
