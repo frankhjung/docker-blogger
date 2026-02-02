@@ -88,9 +88,7 @@ def find_post_by_title(
     ...     print(f"Found post: {post['id']}")
     """
     try:
-        request = service.posts().list(
-            blogId=blog_id, q=title, fetchBodies=False
-        )
+        request = service.posts().list(blogId=blog_id, fetchBodies=False)
         while request:
             response = request.execute()
             items = response.get("items", [])
