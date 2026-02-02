@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Iterator
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import google.auth.exceptions
 from google.oauth2.credentials import Credentials
@@ -32,7 +32,7 @@ def get_service(
 
     Returns
     -------
-    googleapiclient.discovery.Resource
+    Resource
         An authenticated Blogger API v3 service resource.
 
     Raises
@@ -50,21 +50,25 @@ def get_service(
         client_secret=client_secret,
         scopes=SCOPES,
     )
-    return build("blogger", "v3", credentials=creds)
+    return cast(
+        Resource,
+        build("blogger", "v3", credentials=creds, static_discovery=False),
+    )
 
 
 def _iterate_all_posts(
-    service: Resource, blog_id: str
+    service: Any,  # Changed from Resource to Any
+    blog_id: str,
 ) -> Iterator[dict[str, Any]]:
     """
     Generate all posts from paginated Blogger API.
 
     Handles pagination automatically, yielding each post from all
-    pages.
+    pages. Only includes draft and scheduled posts (not published).
 
     Parameters
     ----------
-    service : googleapiclient.discovery.Resource
+    service : Any  # Changed from googleapiclient.discovery.Resource to Any
         Authenticated Blogger API service instance.
     blog_id : str
         ID of the Blogger blog to search.
@@ -81,15 +85,25 @@ def _iterate_all_posts(
     googleapiclient.errors.HttpError
         If API request fails.
     """
-    request = service.posts().list(blogId=blog_id, fetchBodies=False)
+    # Only search DRAFT and SCHEDULED posts for updates
+    request = service.posts().list(
+        blogId=blog_id, status=["DRAFT", "SCHEDULED"]
+    )
     while request:
         response = request.execute()
-        yield from response.get("items", [])
+        items = response.get("items", [])
+        logger.debug(
+            f"Retrieved {len(items)} posts from API, "
+            f"available fields: {list(items[0].keys()) if items else 'none'}"
+        )
+        yield from items
         request = service.posts().list_next(request, response)
 
 
 def find_post_by_title(
-    service: Resource, blog_id: str, title: str
+    service: Any,  # Changed from Resource to Any
+    blog_id: str,
+    title: str,
 ) -> Optional[dict[str, Any]]:
     """
     Search for a blog post by exact title.
@@ -99,7 +113,7 @@ def find_post_by_title(
 
     Parameters
     ----------
-    service : googleapiclient.discovery.Resource
+    service : Any  # Changed from googleapiclient.discovery.Resource to Any
         Authenticated Blogger API service instance.
     blog_id : str
         ID of the Blogger blog to search.
@@ -125,12 +139,35 @@ def find_post_by_title(
     ...     print(f"Found post: {post['id']}")
     """
     try:
-        matching = [
-            post
-            for post in _iterate_all_posts(service, blog_id)
-            if post["title"] == title
-        ]
-        return matching[0] if matching else None
+        posts = list(_iterate_all_posts(service, blog_id))
+        logger.debug(f"Found {len(posts)} total posts in blog")
+
+        matching = [post for post in posts if post.get("title") == title]
+
+        if matching:
+            matched_post = matching[0]
+            logger.info(
+                f"Found existing post with title '{title}' (ID: {matched_post.get('id')}, "
+                f"Status: {matched_post.get('status', 'unknown')})"
+            )
+            return matched_post
+        else:
+            logger.debug(f"No post found with title '{title}'")
+            if posts:
+                available_titles = [p.get("title", "NO_TITLE") for p in posts]
+                available_statuses = [
+                    p.get("status", "unknown") for p in posts
+                ]
+                logger.debug(f"Available post titles: {available_titles}")
+                logger.debug(f"Available post statuses: {available_statuses}")
+                # Check for partial matches or case issues
+                for post in posts:
+                    post_title = post.get("title", "")
+                    if post_title.lower() == title.lower():
+                        logger.warning(
+                            f"Found case-insensitive match: '{post_title}' vs '{title}'"
+                        )
+            return None
     except google.auth.exceptions.RefreshError as e:
         logger.error(f"Authentication failed: {e}")
         raise
@@ -255,7 +292,6 @@ def publish_post(
                 blogId=blog_id,
                 postId=existing_post["id"],
                 body=body,
-                isDraft=is_draft,
             ),
             "update post",
         )
