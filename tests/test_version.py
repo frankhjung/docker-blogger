@@ -1,6 +1,6 @@
 """Test version information."""
 
-import blogspot_publishing
+import blogspot_publishing  # type: ignore
 
 
 def test_version():

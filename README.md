@@ -6,8 +6,12 @@ A GitHub Action to publish articles (HTML/Markdown) to a
 This action supports:
 
 - **Publishing Drafts**: New posts are created as drafts by default.
-- **Idempotency**: If a post with the same title already exists, it updates the
-  existing post (content only) instead of creating a duplicate.
+- **Idempotency**: If a draft post with the same title already exists, it
+  updates the existing post (content and labels) instead of creating a
+  duplicate.
+- **Automatic Image Embedding**: Local images referenced in your HTML are
+  automatically encoded as Base64 data URIs and embedded directly into the post
+  content.
 - **OAuth 2.0**: Secure authentication using Google OAuth 2.0 Refresh Tokens.
 
 ## Usage
@@ -109,3 +113,10 @@ docker run --rm \
   --client-secret "YOUR_CLIENT_SECRET" \
   --refresh-token "YOUR_REFRESH_TOKEN"
 ```
+
+## Examples
+
+This action is used by the following repositories:
+
+- [frankhjung/article-publish-to-blogspot](https://github.com/frankhjung/article-publish-to-blogspot)
+- [frankhjung/article-base-rate](https://github.com/frankhjung/article-base-rate)

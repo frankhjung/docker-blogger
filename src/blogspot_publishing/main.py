@@ -1,39 +1,25 @@
 import argparse
 import logging
-import os
 import sys
+from pathlib import Path
 
 from blogspot_publishing import __version__
 from blogspot_publishing.publish import publish_post
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
 def main():
-    """
-    CLI entry point to publish a blog post to Blogspot.
-
-    Reads command-line arguments for authentication credentials and post
-    content, then publishes the post using the Blogger API v3.
-
-    Exits with status code 1 on errors (file not found, publication failure).
-    """
+    """CLI entry point to publish a blog post to Blogspot."""
     parser = argparse.ArgumentParser(
         description="Publish content to Blogspot."
     )
-
     parser.add_argument(
         "--version", action="version", version=f"%(prog)s {__version__}"
     )
+    parser.add_argument("--title", required=True, help="Post title")
     parser.add_argument(
-        "--title", required=True, help="Title of the blog post"
-    )
-    parser.add_argument(
-        "--source-file",
-        required=True,
-        help="Path to the file containing the post content (HTML)",
+        "--source-file", required=True, help="Source HTML file"
     )
     parser.add_argument("--blog-id", required=True, help="Blogger Blog ID")
     parser.add_argument("--client-id", required=True, help="OAuth Client ID")
@@ -43,28 +29,14 @@ def main():
     parser.add_argument(
         "--refresh-token", required=True, help="OAuth Refresh Token"
     )
-    parser.add_argument(
-        "--labels",
-        help="Comma-separated list of labels",
-        default="",
-    )
+    parser.add_argument("--labels", default="", help="Comma-separated labels")
 
     args = parser.parse_args()
+    source = Path(args.source_file)
 
-    # Read content
-    if not os.path.exists(args.source_file):
-        logger.error(f"Source file not found: {args.source_file}")
+    if not source.exists():
+        logger.error(f"Source file not found: {source}")
         sys.exit(1)
-
-    with open(args.source_file, encoding="utf-8") as f:
-        content = f.read()
-
-    # Parse labels
-    labels_list = (
-        [label.strip() for label in args.labels.split(",")]
-        if args.labels
-        else []
-    )
 
     try:
         publish_post(
@@ -73,9 +45,11 @@ def main():
             refresh_token=args.refresh_token,
             blog_id=args.blog_id,
             title=args.title,
-            content=content,
-            labels=labels_list,
-            source_file_path=args.source_file,
+            content=source.read_text(encoding="utf-8"),
+            labels=[L.strip() for L in args.labels.split(",")]
+            if args.labels
+            else [],
+            source_file_path=str(source),
         )
     except Exception as e:
         logger.error(f"Failed to publish post: {e}")
@@ -83,4 +57,7 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.DEBUG, format="%(levelname)s: %(message)s"
+    )
     main()

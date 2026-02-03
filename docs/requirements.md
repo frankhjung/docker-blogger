@@ -9,7 +9,7 @@ v3](https://developers.google.com/blogger/docs/3.0/using) to do this.
 
 ## Outline
 
-1. Use existing blogspot account (frankhjung@gmail.com).
+1. Use existing blogspot account frankhjung.
 1. Assume the blog has been created in a local GitHub repository.
 1. Assume the GitHub repository has a GitHub pipeline that renders the source
    (markdown) into HTML.
