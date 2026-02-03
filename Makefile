@@ -62,3 +62,6 @@ run-container: ## Run the Docker container (requires env vars or args)
 
 test-container: build-image ## Test the Docker image (sanity check)
 	@docker run --rm blogspot-publishing --help
+
+version: build-image ## Show container version
+	@docker run --rm blogspot-publishing --version

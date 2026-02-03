@@ -1,5 +1,4 @@
 ---
-
 name: Publish Action Image
 
 on:
@@ -14,7 +13,6 @@ on:
       - "uv.lock"
 
 jobs:
-
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
@@ -25,6 +23,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Extract version from __init__.py
+        run: |
+          VERSION=$(grep -oP '__version__\s*=\s*"\K[^"]+' src/blogspot_publishing/__init__.py)
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not extract version from src/blogspot_publishing/__init__.py"
+            exit 1
+          fi
+          echo "PUBLISHING_VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -41,3 +48,4 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:${{ env.PUBLISHING_VERSION }}

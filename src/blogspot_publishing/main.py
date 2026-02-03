@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 
+from blogspot_publishing import __version__
 from blogspot_publishing.publish import publish_post
 
 # Configure logging
@@ -23,6 +24,9 @@ def main():
         description="Publish content to Blogspot."
     )
 
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
+    )
     parser.add_argument(
         "--title", required=True, help="Title of the blog post"
     )

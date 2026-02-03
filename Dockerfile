@@ -18,6 +18,4 @@ COPY README.md ./
 RUN uv sync --frozen --no-dev
 
 # Set entrypoint
-# We use 'uv run' to ensure we run in the environment
-# ENTRYPOINT ["uv", "run", "python", "-m", "blogspot_publishing.main"]
 ENTRYPOINT ["/app/.venv/bin/python", "-m", "blogspot_publishing.main"]
