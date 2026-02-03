@@ -5,6 +5,7 @@ description = "Utility to publish a blog to Blogspot"
 readme = "README.md"
 requires-python = ">=3.9,<4"
 dependencies = [
+    "beautifulsoup4>=4.12.0",
     "google-api-python-client>=2.0.0",
     "google-auth>=2.0.0",
     "google-auth-httplib2>=0.1.0",
@@ -18,7 +19,7 @@ build-backend = "hatchling.build"
 packages = ["src/blogspot_publishing"]
 
 [dependency-groups]
-dev = ["pytest>=8.0.0", "ruff>=0.3.0"]
+dev = ["pytest>=8.0.0", "pytest-cov>=4.0.0", "ruff>=0.3.0"]
 
 [tool.ruff]
 line-length = 79
@@ -43,3 +44,9 @@ indent-style = "space"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.coverage.run]
+omit = ["*/main.py"]
+
+[tool.coverage.report]
+precision = 2

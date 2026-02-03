@@ -3,6 +3,7 @@
 cache/
 *.code-workspace
 *,cover
+.coverage
 doc/
 *.docx
 figure/

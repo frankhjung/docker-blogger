@@ -80,8 +80,11 @@ The project includes a `Makefile` to simplify common tasks:
 # Install Python dependencies locally
 make install
 
-# Run unit tests
-make test
+# Lock Python dependencies
+make lock
+
+# Lint and run unit tests
+make check
 
 # Build the Docker image for the Action
 make build-image

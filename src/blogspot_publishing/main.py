@@ -71,6 +71,7 @@ def main():
             title=args.title,
             content=content,
             labels=labels_list,
+            source_file_path=args.source_file,
         )
     except Exception as e:
         logger.error(f"Failed to publish post: {e}")

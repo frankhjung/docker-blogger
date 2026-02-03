@@ -1,8 +1,12 @@
+import base64
 import logging
+import mimetypes
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any, Optional, cast
 
 import google.auth.exceptions
+from bs4 import BeautifulSoup
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import Resource, build  # type: ignore
 from googleapiclient.errors import HttpError
@@ -10,6 +14,88 @@ from googleapiclient.errors import HttpError
 logger = logging.getLogger(__name__)
 
 SCOPES = ["https://www.googleapis.com/auth/blogger"]
+
+
+def _encode_images_in_html(
+    html_content: str, base_path: Optional[Path] = None
+) -> str:
+    """
+    Encode local images in HTML as Base64 data URIs.
+
+    Scans HTML for img tags with local file paths and converts them to
+    embedded Base64 data URIs. This allows images to be embedded directly
+    in the HTML without external references.
+
+    Parameters
+    ----------
+    html_content : str
+        HTML content containing img tags.
+    base_path : Path | None, optional
+        Base directory for resolving relative image paths. If None, uses
+        current working directory. Default is None.
+
+    Returns
+    -------
+    str
+        HTML content with local image paths converted to Base64 data URIs.
+
+    Notes
+    -----
+    - External URLs (http://, https://) are left unchanged
+    - Already-encoded data URIs are left unchanged
+    - Missing local files are logged as warnings
+    - Supported image types: jpg, jpeg, png, gif, webp, svg
+    """
+    if base_path is None:
+        base_path = Path.cwd()
+
+    soup = BeautifulSoup(html_content, "html.parser")
+    img_tags = soup.find_all("img")
+
+    for img in img_tags:
+        src = img.get("src", "")
+
+        # Skip external URLs and data URIs
+        if isinstance(src, str) and src.startswith(
+            ("http://", "https://", "data:")
+        ):
+            continue
+
+        # Ensure src is a string for path operations
+        src_str = str(src) if src else ""
+        if not src_str:
+            continue
+
+        # Try to load the image file
+        img_path: Path = (
+            base_path / src_str
+            if not Path(src_str).is_absolute()
+            else Path(src_str)
+        )
+
+        if not img_path.exists():
+            logger.warning(f"Image file not found: {img_path}")
+            continue
+
+        try:
+            # Read image and encode as Base64
+            with open(img_path, "rb") as f:
+                image_data = base64.b64encode(f.read()).decode("utf-8")
+
+            # Determine MIME type
+            mime_type, _ = mimetypes.guess_type(str(img_path))
+            if mime_type is None:
+                mime_type = "application/octet-stream"
+
+            # Create data URI
+            data_uri = f"data:{mime_type};base64,{image_data}"
+            img["src"] = data_uri
+            logger.debug(f"Encoded image: {img_path} ({mime_type})")
+
+        except Exception as e:
+            logger.warning(f"Failed to encode image {img_path}: {e}")
+
+    return str(soup)
 
 
 def get_service(
@@ -147,7 +233,7 @@ def find_post_by_title(
         if matching:
             matched_post = matching[0]
             logger.info(
-                f"Found existing post with title '{title}' (ID: {matched_post.get('id')}, "
+                f"Found existing post with title '{title}' (ID: {matched_post.get('id')}, "  # noqa: E501
                 f"Status: {matched_post.get('status', 'unknown')})"
             )
             return matched_post
@@ -165,7 +251,7 @@ def find_post_by_title(
                     post_title = post.get("title", "")
                     if post_title.lower() == title.lower():
                         logger.warning(
-                            f"Found case-insensitive match: '{post_title}' vs '{title}'"
+                            f"Found case-insensitive match: '{post_title}' vs '{title}'"  # noqa: E501
                         )
             return None
     except google.auth.exceptions.RefreshError as e:
@@ -222,6 +308,7 @@ def publish_post(
     content: str,
     labels: Optional[list[str]] = None,
     is_draft: bool = True,
+    source_file_path: Optional[str] = None,
 ) -> dict[str, Any]:
     """
     Publish or update a post to Blogspot.
@@ -229,6 +316,9 @@ def publish_post(
     Creates a new draft post or updates existing post by title.
     If a post with matching title exists, updates its content.
     Otherwise, creates a new post as a draft.
+
+    Automatically encodes any local images in the content as Base64
+    data URIs for embedding in the blog.
 
     Parameters
     ----------
@@ -248,6 +338,10 @@ def publish_post(
         List of labels/tags to assign to the post. Default is None.
     is_draft : bool, optional
         Whether to create post as draft. Default is True.
+    source_file_path : str | None, optional
+        Path to source HTML file. Used as base directory for resolving
+        relative image paths. If None, uses current working directory.
+        Default is None.
 
     Returns
     -------
@@ -272,10 +366,18 @@ def publish_post(
     ...     "blog123",
     ...     "My Post",
     ...     "<p>Content</p>",
-    ...     labels=["python", "tutorial"]
+    ...     labels=["python", "tutorial"],
+    ...     source_file_path="/path/to/post.html"
     ... )
     >>> print(f"Published: {result['url']}")
     """
+    # Encode images in content
+    base_path = None
+    if source_file_path:
+        base_path = Path(source_file_path).parent
+
+    content = _encode_images_in_html(content, base_path)
+
     service = get_service(client_id, client_secret, refresh_token)
     existing_post = find_post_by_title(service, blog_id, title)
 

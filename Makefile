@@ -1,9 +1,11 @@
 #!/usr/bin/make
 
-.PHONY: help install lock format lint test clean
+.PHONY: help install check coverage lock format lint test clean
+
+.DEFAULT_GOAL := check
 
 help: ## Show this help message
-	@echo "Available targets:"
+	@echo Available targets:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
 
 install: ## Install dependencies
@@ -29,9 +31,12 @@ test-verbose: ## Run tests with verbose output
 	@uv run pytest -v
 
 coverage: ## Run tests with coverage
-	@uv run pytest --cov=blogspot_publishing --cov-report=term-missing --cov-report=html
+	@uv run pytest \
+		--cov=blogspot_publishing \
+		--cov-report=term-missing \
+		--cov-report=html
 
-check: format lint test ## Run all checks (format, lint, test)
+check: format lint test coverage
 
 clean: ## Clean build artifacts
 	@$(RM) -rf .pytest_cache .ruff_cache .coverage htmlcov
@@ -46,7 +51,14 @@ build-image: ## Build the Docker image
 	@docker build -t blogspot-publishing .
 
 run-container: ## Run the Docker container (requires env vars or args)
-	@docker run --rm blogspot-publishing
+	@docker run --rm blogspot-publishing \
+		--source-file /data/public.index.html \
+		--title "Post Title" \
+		--labels "label1,label2" \
+		--blog-id $(BLOG_ID) \
+		--client-id $(CLIENT_ID) \
+		--client-secret $(CLIENT_SECRET) \
+		--refresh-token $(REFRESH_TOKEN)
 
 test-container: build-image ## Test the Docker image (sanity check)
 	@docker run --rm blogspot-publishing --help
