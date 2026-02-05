@@ -1,4 +1,5 @@
 import base64
+import io
 import logging
 import mimetypes
 from collections.abc import Iterator
@@ -10,6 +11,7 @@ from bs4 import BeautifulSoup, Tag
 from google.oauth2.credentials import Credentials  # type: ignore
 from googleapiclient.discovery import Resource, build  # type: ignore
 from googleapiclient.errors import HttpError  # type: ignore
+from PIL import Image, UnidentifiedImageError
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,7 @@ class BloggerService(Protocol):
 
 
 def _encode_image(img_path: Path) -> str | None:
-    """Encode image to data URI."""
+    """Encode image to data URI, resizing if needed."""
     try:
         mime = mimetypes.guess_type(str(img_path))[0]
         if not mime or not mime.startswith("image/"):
@@ -53,8 +55,7 @@ def _encode_image(img_path: Path) -> str | None:
                 mime,
             )
             return None
-
-        data = img_path.read_bytes()
+        data = _resize_image_if_needed(img_path, mime)
         if len(data) > 200 * 1024:
             logger.warning(
                 "Image %s is large (%d bytes). This may cause API errors.",
@@ -67,6 +68,52 @@ def _encode_image(img_path: Path) -> str | None:
     except (OSError, PermissionError) as e:
         logger.warning(f"Failed to encode {img_path}: {e}")
         return None
+
+
+def _resize_image_if_needed(img_path: Path, mime: str) -> bytes:
+    """Resize image to max width 640px if needed, otherwise return bytes."""
+    try:
+        with Image.open(img_path) as image:
+            width, height = image.size
+            if width <= 640:
+                return img_path.read_bytes()
+
+            new_height = max(1, round(height * (640 / width)))
+            resized = image.resize((640, new_height), Image.LANCZOS)
+
+            format_map = {
+                "image/jpeg": "JPEG",
+                "image/png": "PNG",
+                "image/gif": "GIF",
+                "image/webp": "WEBP",
+            }
+            format_name = (
+                image.format
+                or format_map.get(mime)
+                or img_path.suffix.lstrip(".").upper()
+                or "PNG"
+            )
+
+            buffer = io.BytesIO()
+            save_params: dict[str, Any] = {}
+            if format_name == "JPEG":
+                save_params = {"quality": 85, "optimize": True}
+                if resized.mode in {"RGBA", "LA", "P"}:
+                    resized = resized.convert("RGB")
+
+            resized.save(buffer, format=format_name, **save_params)
+            resized_bytes = buffer.getvalue()
+            logger.info(
+                "Resized image %s from %dx%d to 640x%d",
+                img_path.name,
+                width,
+                height,
+                new_height,
+            )
+            return resized_bytes
+    except UnidentifiedImageError:
+        logger.warning("Unable to read image %s. Using raw bytes.", img_path)
+        return img_path.read_bytes()
 
 
 def _process_img(img: Tag, base: Path) -> None:
@@ -82,6 +129,8 @@ def _process_img(img: Tag, base: Path) -> None:
 def _embed_images(html: str, base: Path | None) -> str:
     """Embed local images as data URIs."""
     soup = BeautifulSoup(html, "html.parser")
+    for header in soup.find_all("header"):
+        header.decompose()
     for img in soup.find_all("img"):
         _process_img(img, base or Path.cwd())
 
