@@ -32,7 +32,7 @@ test-verbose: ## Run tests with verbose output
 
 coverage: ## Run tests with coverage
 	@uv run pytest \
-		--cov=blogspot_publishing \
+		--cov=blogger \
 		--cov-report=term-missing \
 		--cov-report=html
 
@@ -48,10 +48,10 @@ cleanall: clean ## Clean all generated files including venv
 
 # Docker targets
 build-image: ## Build the Docker image
-	@docker build -t blogspot-publishing .
+	@docker build -t blogger .
 
 run-container: ## Run the Docker container (requires env vars or args)
-	@docker run --rm blogspot-publishing \
+	@docker run --rm blogger \
 		--source-file /data/public.index.html \
 		--title "Post Title" \
 		--labels "label1,label2" \
@@ -61,7 +61,7 @@ run-container: ## Run the Docker container (requires env vars or args)
 		--refresh-token $(REFRESH_TOKEN)
 
 test-container: build-image ## Test the Docker image (sanity check)
-	@docker run --rm blogspot-publishing --help
+	@docker run --rm blogger --help
 
 version: build-image ## Show container version
-	@docker run --rm blogspot-publishing --version
+	@docker run --rm blogger --version

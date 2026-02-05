@@ -1,9 +1,9 @@
 """Test version information."""
 
-import blogspot_publishing  # type: ignore
+import blogger  # type: ignore
 
 
 def test_version():
     """Test that version is defined."""
-    assert hasattr(blogspot_publishing, "__version__")
-    assert blogspot_publishing.__version__ == "v3"
+    assert hasattr(blogger, "__version__")
+    assert blogger.__version__ == "v1"

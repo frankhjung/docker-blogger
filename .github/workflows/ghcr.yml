@@ -1,5 +1,5 @@
 ---
-name: Publish Action Image
+name: Build and Push Docker Image to GitHub Container Registry
 
 on:
   push:
@@ -27,19 +27,25 @@ jobs:
       - name: Read version from project
         id: version
         run: |
-          VERSION=$(grep -oP '__version__\s*=\s*"\K[^"]+' src/blogspot_publishing/__init__.py)
-          if [ -z "$VERSION" ]; then
-            echo "::error::Could not extract version from src/blogspot_publishing/__init__.py"
+          VERSION=$(grep -oP '__version__\s*=\s*"\K[^"]+' src/blogger/__init__.py)
+          if [ -z "${VERSION}" ]; then
+            echo "::error::Could not extract version from src/blogger/__init__.py"
             exit 1
           fi
-          echo "PUBLISHING_VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "PUBLISHING_VERSION=${VERSION}" >> ${GITHUB_OUTPUT}
 
-      - name: Log in to the Container registry
+      - name: Log in to the container registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Transform repository name
+        id: repo_name
+        run: |
+          IMAGE_NAME=$(echo "${{ github.repository }}" | sed 's/docker-//')
+          echo "IMAGE_NAME=${IMAGE_NAME}" >> ${GITHUB_OUTPUT}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -47,6 +53,6 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
-            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.PUBLISHING_VERSION }}
+            ghcr.io/${{ steps.repo_name.outputs.IMAGE_NAME }}:latest
+            ghcr.io/${{ steps.repo_name.outputs.IMAGE_NAME }}:${{ github.sha }}
+            ghcr.io/${{ steps.repo_name.outputs.IMAGE_NAME }}:${{ steps.version.outputs.PUBLISHING_VERSION }}

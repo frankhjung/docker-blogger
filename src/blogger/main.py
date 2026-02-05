@@ -3,8 +3,8 @@ import logging
 import sys
 from pathlib import Path
 
-from blogspot_publishing import __version__
-from blogspot_publishing.publish import publish_post
+from blogger import __version__
+from blogger.publish import publish_post
 
 logger = logging.getLogger(__name__)
 

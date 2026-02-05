@@ -1,1 +1,1 @@
-"""Tests for blogspot_publishing package."""
+"""Tests for blogger package."""

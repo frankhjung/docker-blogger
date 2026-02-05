@@ -3,4 +3,4 @@
 A utility to publish a blog to Blogspot.
 """
 
-__version__ = "v3"
+__version__ = "v1"

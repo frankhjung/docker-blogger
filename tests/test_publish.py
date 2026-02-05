@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import google.auth.exceptions  # type: ignore
 
-from blogspot_publishing.publish import (  # type: ignore
+from blogger.publish import (  # type: ignore
     find_post_by_title,
     publish_post,
 )
@@ -14,7 +14,7 @@ class TestPublish(unittest.TestCase):
         self.mock_service = MagicMock()
         self.mock_posts = self.mock_service.posts.return_value
 
-    @patch("blogspot_publishing.publish._iter_posts")
+    @patch("blogger.publish._iter_posts")
     def test_find_post_by_title_found(self, mock_iterate: MagicMock) -> None:
         # Setup mock to return posts
         mock_iterate.return_value = [
@@ -29,7 +29,7 @@ class TestPublish(unittest.TestCase):
         self.assertEqual(result["id"], "123")
         self.assertEqual(result["title"], "My Post")
 
-    @patch("blogspot_publishing.publish._iter_posts")
+    @patch("blogger.publish._iter_posts")
     def test_find_post_by_title_not_found(
         self, mock_iterate: MagicMock
     ) -> None:
@@ -44,8 +44,8 @@ class TestPublish(unittest.TestCase):
         # Verify
         self.assertIsNone(result)
 
-    @patch("blogspot_publishing.publish.get_service")
-    @patch("blogspot_publishing.publish._iter_posts")
+    @patch("blogger.publish.get_service")
+    @patch("blogger.publish._iter_posts")
     def test_publish_post_insert(
         self, mock_iterate: MagicMock, mock_get_service: MagicMock
     ) -> None:
@@ -67,8 +67,8 @@ class TestPublish(unittest.TestCase):
         self.assertEqual(kwargs["body"]["title"], "New Post")
         self.assertTrue(kwargs["isDraft"])  # Default is True
 
-    @patch("blogspot_publishing.publish.get_service")
-    @patch("blogspot_publishing.publish._iter_posts")
+    @patch("blogger.publish.get_service")
+    @patch("blogger.publish._iter_posts")
     def test_publish_post_update(
         self, mock_iterate: MagicMock, mock_get_service: MagicMock
     ) -> None:
@@ -94,8 +94,8 @@ class TestPublish(unittest.TestCase):
         self.assertEqual(kwargs["postId"], "123")
         self.assertEqual(kwargs["body"]["content"], "New Content")
 
-    @patch("blogspot_publishing.publish.get_service")
-    @patch("blogspot_publishing.publish._iter_posts")
+    @patch("blogger.publish.get_service")
+    @patch("blogger.publish._iter_posts")
     def test_publish_post_skip_non_draft(
         self, mock_iterate: MagicMock, mock_get_service: MagicMock
     ) -> None:
@@ -105,9 +105,7 @@ class TestPublish(unittest.TestCase):
             {"id": "123", "title": "Live Post", "status": "LIVE"}
         ]
 
-        with self.assertLogs(
-            "blogspot_publishing.publish", level="WARNING"
-        ) as cm:
+        with self.assertLogs("blogger.publish", level="WARNING") as cm:
             result = publish_post(
                 "client_id",
                 "client_secret",
@@ -124,7 +122,7 @@ class TestPublish(unittest.TestCase):
             any("is LIVE. Skipping" in output for output in cm.output)
         )
 
-    @patch("blogspot_publishing.publish.get_service")
+    @patch("blogger.publish.get_service")
     def test_publish_post_auth_failure(
         self, mock_get_service: MagicMock
     ) -> None:
@@ -143,7 +141,7 @@ class TestPublish(unittest.TestCase):
                 "Content",
             )
 
-    @patch("blogspot_publishing.publish._iter_posts")
+    @patch("blogger.publish._iter_posts")
     def test_find_post_by_title_scheduled(
         self, mock_iterate: MagicMock
     ) -> None:
@@ -160,7 +158,7 @@ class TestPublish(unittest.TestCase):
         self.assertEqual(result["id"], "123")
         self.assertEqual(result["status"], "SCHEDULED")
 
-    @patch("blogspot_publishing.publish._iter_posts")
+    @patch("blogger.publish._iter_posts")
     def test_find_post_by_title_http_error(
         self, mock_iterate: MagicMock
     ) -> None:

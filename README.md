@@ -1,6 +1,6 @@
-# Blogspot Publishing Action
+# Blogger Publishing Action
 
-A GitHub Action to publish pre-rendered HTML articles to a
+This GitHub Action will publish pre-rendered HTML articles to a
 [Blogger](https://www.blogger.com) (Blogspot) blog using the Blogger API v3.
 
 This action supports:
@@ -10,10 +10,10 @@ This action supports:
   it updates the existing content and labels. Note that live or scheduled posts
   are not modified to prevent accidental overwrites.
 - **Embedded Assets**: Local images referenced in your HTML are automatically
-  encoded as Base64 data URIs. It is recommended to keep images under 200KB to
-  avoid API payload limits.
+  encoded as Base64 data URIs. Images wider than 640 pixels are resized to fit.
 - **Smart Extraction**: If a full HTML document is provided, the action
-  intelligently extracts the body content and internal CSS styles.
+  intelligently extracts the body content and internal CSS styles. The header
+  section is ignored, allowing you to focus on the article content.
 - **OAuth 2.0**: Secure authentication using Google OAuth 2.0 Refresh Tokens.
 
 ## Usage
@@ -37,7 +37,7 @@ The recommended step to add to your GitHub Actions workflow (e.g.,
 ```yaml
 - name: Publish to Blogspot
   if: success()
-  uses: frankhjung/blogspot-publishing@v1
+  uses: frankhjung/blogger@v1
   with:
     title: "Your Blog Post Title"
     source-file: "path/to/your/article.html"
@@ -53,11 +53,11 @@ Alternatively, to use the image from GHCR, use this instead:
 ```yaml
 - name: publish to blog
   if: success()
-  uses: docker://ghcr.io/frankhjung/blogspot-publishing:v1
+  uses: docker://ghcr.io/frankhjung/blogger:v1
   with:
     args: >-
-      --source-file "path/to/your/article.html"
       --title "Your Blog Post Title"
+      --source-file "path/to/your/article.html"
       --labels "news, linux"
       --blog-id "${{ secrets.BLOGGER_BLOG_ID }}"
       --client-id "${{ secrets.BLOGGER_CLIENT_ID }}"
@@ -74,11 +74,11 @@ repository settings under **Settings > Secrets and variables > Actions**.
 | ----- | ----------- | -------- |
 | `title` | Title of the blog post | Yes |
 | `source-file` | Path to the file containing the HTML content | Yes |
+| `labels` | Comma-separated list of labels | No |
 | `blog-id` | The ID of your Blogger blog | Yes |
 | `client-id` | Google OAuth Client ID | Yes |
 | `client-secret` | Google OAuth Client Secret | Yes |
 | `refresh-token` | Google OAuth Refresh Token | Yes |
-| `labels` | Comma-separated list of labels | No |
 
 ## Local Development
 
@@ -117,11 +117,10 @@ You can run the Docker container directly to simulate the Action execution,
 provided you have a local file to publish and your credentials.
 
 ```bash
-docker run --rm \
-  -v $(pwd):/data \
-  blogspot-publishing \
+docker run --rm -v $(pwd):/data blogger:latest \
   --title "Test Post" \
   --source-file "/data/test_article.html" \
+  --labels "test, local" \
   --blog-id "YOUR_BLOG_ID" \
   --client-id "YOUR_CLIENT_ID" \
   --client-secret "YOUR_CLIENT_SECRET" \
