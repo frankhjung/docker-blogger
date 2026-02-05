@@ -1,3 +1,4 @@
+
 *~
 *.bak
 cache/
@@ -26,4 +27,5 @@ refresh_token.py
 .Rproj.user
 *.tex
 venv/
+.vscode/
 *.zip

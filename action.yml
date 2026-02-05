@@ -1,7 +1,7 @@
 ---
 
 name: 'Publish to Blogspot'
-description: 'Publishes a Markdown/HTML article to Blogspot using API v3'
+description: 'Publishes pre-rendered HTML content to Blogspot using API v3'
 author: 'Frank Jung'
 branding:
   icon: 'edit-2'

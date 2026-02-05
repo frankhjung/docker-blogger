@@ -3,7 +3,7 @@ import logging
 import mimetypes
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Optional, Protocol, cast
+from typing import Any, Protocol, cast
 
 import google.auth.exceptions  # type: ignore
 from bs4 import BeautifulSoup, Tag
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 SCOPES = ["https://www.googleapis.com/auth/blogger"]
 
 
-def _norm(v: Optional[str]) -> str:
+def _norm(v: str | None) -> str:
     """Normalize string (strip and casefold)."""
     return str(v or "").strip().casefold()
 
@@ -42,7 +42,7 @@ class BloggerService(Protocol):
     def posts(self) -> BloggerPostsResource: ...
 
 
-def _encode_image(img_path: Path) -> Optional[str]:
+def _encode_image(img_path: Path) -> str | None:
     """Encode image to data URI."""
     try:
         mime = mimetypes.guess_type(str(img_path))[0]
@@ -79,7 +79,7 @@ def _process_img(img: Tag, base: Path) -> None:
         img["src"] = uri
 
 
-def _embed_images(html: str, base: Optional[Path]) -> str:
+def _embed_images(html: str, base: Path | None) -> str:
     """Embed local images as data URIs."""
     soup = BeautifulSoup(html, "html.parser")
     for img in soup.find_all("img"):
@@ -133,7 +133,7 @@ def _iter_posts(
 
 def find_post_by_title(
     service: Any, blog_id: str, title: str
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Find post by case-insensitive title."""
     try:
         target = _norm(title)
@@ -174,9 +174,9 @@ def publish_post(
     blog_id: str,
     title: str,
     content: str,
-    labels: Optional[list[str]] = None,
+    labels: list[str] | None = None,
     is_draft: bool = True,
-    source_file_path: Optional[str] = None,
+    source_file_path: str | None = None,
 ) -> dict[str, Any]:
     """Publish or update a post to Blogspot."""
     base = Path(source_file_path).parent if source_file_path else None

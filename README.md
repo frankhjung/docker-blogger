@@ -1,17 +1,19 @@
 # Blogspot Publishing Action
 
-A GitHub Action to publish articles (HTML/Markdown) to a
+A GitHub Action to publish pre-rendered HTML articles to a
 [Blogger](https://www.blogger.com) (Blogspot) blog using the Blogger API v3.
 
 This action supports:
 
 - **Publishing Drafts**: New posts are created as drafts by default.
-- **Idempotency**: If a draft post with the same title already exists, it
-  updates the existing post (content and labels) instead of creating a
-  duplicate.
-- **Automatic Image Embedding**: Local images referenced in your HTML are
-  automatically encoded as Base64 data URIs and embedded directly into the post
-  content.
+- **Conditional Updates**: If a draft post with the same title already exists,
+  it updates the existing content and labels. Note that live or scheduled posts
+  are not modified to prevent accidental overwrites.
+- **Embedded Assets**: Local images referenced in your HTML are automatically
+  encoded as Base64 data URIs. It is recommended to keep images under 200KB to
+  avoid API payload limits.
+- **Smart Extraction**: If a full HTML document is provided, the action
+  intelligently extracts the body content and internal CSS styles.
 - **OAuth 2.0**: Secure authentication using Google OAuth 2.0 Refresh Tokens.
 
 ## Usage
@@ -29,30 +31,42 @@ instructions on how to obtain your:
 
 ### Example Workflow
 
-Add this step to your GitHub Actions workflow (e.g.,
-`.github/workflows/publish.yml`):
+The recommended step to add to your GitHub Actions workflow (e.g.,
+`.github/workflows/publish.yml`) is:
 
 ```yaml
-steps:
-  - name: Checkout code
-    uses: actions/checkout@v4
-
-  - name: Render Markdown to HTML
-    # Assuming you have a step that generates the HTML content
-    run: |
-      pandoc post.md -o post.html
-
-  - name: Publish to Blogspot
-    uses: frankhjung/blogspot-publishing@main
-    with:
-      title: "My Awesome Post"
-      source-file: "post.html"
-      blog-id: ${{ secrets.BLOGGER_BLOG_ID }}
-      client-id: ${{ secrets.BLOGGER_CLIENT_ID }}
-      client-secret: ${{ secrets.BLOGGER_CLIENT_SECRET }}
-      refresh-token: ${{ secrets.BLOGGER_REFRESH_TOKEN }}
-      labels: "tech, tutorial"
+- name: Publish to Blogspot
+  if: success()
+  uses: frankhjung/blogspot-publishing@v1
+  with:
+    title: "Your Blog Post Title"
+    source-file: "path/to/your/article.html"
+    labels: "news, linux"
+    blog-id: ${{ secrets.BLOGGER_BLOG_ID }}
+    client-id: ${{ secrets.BLOGGER_CLIENT_ID }}
+    client-secret: ${{ secrets.BLOGGER_CLIENT_SECRET }}
+    refresh-token: ${{ secrets.BLOGGER_REFRESH_TOKEN }}
 ```
+
+Alternatively, to use the image from GHCR, use this instead:
+
+```yaml
+- name: publish to blog
+  if: success()
+  uses: docker://ghcr.io/frankhjung/blogspot-publishing:v1
+  with:
+    args: >-
+      --source-file "path/to/your/article.html"
+      --title "Your Blog Post Title"
+      --labels "news, linux"
+      --blog-id "${{ secrets.BLOGGER_BLOG_ID }}"
+      --client-id "${{ secrets.BLOGGER_CLIENT_ID }}"
+      --client-secret "${{ secrets.BLOGGER_CLIENT_SECRET }}"
+      --refresh-token "${{ secrets.BLOGGER_REFRESH_TOKEN }}"
+```
+
+**Note:** Ensure you have defined the necessary secrets in your GitHub
+repository settings under **Settings > Secrets and variables > Actions**.
 
 ### Inputs
 
