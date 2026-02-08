@@ -22,7 +22,7 @@ wheels = [
 
 [[package]]
 name = "blogger"
-version = "1"
+version = "1.1"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },

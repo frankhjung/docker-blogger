@@ -15,8 +15,6 @@ from PIL import Image, UnidentifiedImageError
 
 logger = logging.getLogger(__name__)
 
-SCOPES = ["https://www.googleapis.com/auth/blogger"]
-
 
 def _norm(v: str | None) -> str:
     """Normalize string (strip and casefold)."""
@@ -45,7 +43,7 @@ class BloggerService(Protocol):
 
 
 def _encode_image(img_path: Path) -> str | None:
-    """Encode image to data URI, resizing if needed."""
+    """Encode image to JPEG data URI, resizing if needed."""
     try:
         mime = mimetypes.guess_type(str(img_path))[0]
         if not mime or not mime.startswith("image/"):
@@ -55,7 +53,7 @@ def _encode_image(img_path: Path) -> str | None:
                 mime,
             )
             return None
-        data = _resize_image_if_needed(img_path, mime)
+        data = _resize_image_if_needed(img_path)
         if len(data) > 200 * 1024:
             logger.warning(
                 "Image %s is large (%d bytes). This may cause API errors.",
@@ -64,45 +62,19 @@ def _encode_image(img_path: Path) -> str | None:
             )
 
         b64 = base64.b64encode(data).decode()
-        return f"data:{mime};base64,{b64}"
-    except (OSError, PermissionError) as e:
+        return f"data:image/jpeg;base64,{b64}"
+    except (OSError, PermissionError, UnidentifiedImageError) as e:
         logger.warning(f"Failed to encode {img_path}: {e}")
         return None
 
 
-def _resize_image_if_needed(img_path: Path, mime: str) -> bytes:
-    """Resize image to max width 640px if needed, otherwise return bytes."""
-    try:
-        with Image.open(img_path) as image:
-            width, height = image.size
-            if width <= 640:
-                return img_path.read_bytes()
-
+def _resize_image_if_needed(img_path: Path) -> bytes:
+    """Resize image to max width 640px and encode as JPEG bytes."""
+    with Image.open(img_path) as image:
+        width, height = image.size
+        if width > 640:
             new_height = max(1, round(height * (640 / width)))
-            resized = image.resize((640, new_height), Image.LANCZOS)
-
-            format_map = {
-                "image/jpeg": "JPEG",
-                "image/png": "PNG",
-                "image/gif": "GIF",
-                "image/webp": "WEBP",
-            }
-            format_name = (
-                image.format
-                or format_map.get(mime)
-                or img_path.suffix.lstrip(".").upper()
-                or "PNG"
-            )
-
-            buffer = io.BytesIO()
-            save_params: dict[str, Any] = {}
-            if format_name == "JPEG":
-                save_params = {"quality": 85, "optimize": True}
-                if resized.mode in {"RGBA", "LA", "P"}:
-                    resized = resized.convert("RGB")
-
-            resized.save(buffer, format=format_name, **save_params)
-            resized_bytes = buffer.getvalue()
+            resized = image.resize((640, new_height), Image.Resampling.LANCZOS)
             logger.info(
                 "Resized image %s from %dx%d to 640x%d",
                 img_path.name,
@@ -110,10 +82,15 @@ def _resize_image_if_needed(img_path: Path, mime: str) -> bytes:
                 height,
                 new_height,
             )
-            return resized_bytes
-    except UnidentifiedImageError:
-        logger.warning("Unable to read image %s. Using raw bytes.", img_path)
-        return img_path.read_bytes()
+        else:
+            resized = image.copy()
+
+        if resized.mode not in {"RGB", "L"}:
+            resized = resized.convert("RGB")
+
+        buffer = io.BytesIO()
+        resized.save(buffer, format="JPEG", quality=85, optimize=True)
+        return buffer.getvalue()
 
 
 def _process_img(img: Tag, base: Path) -> None:
@@ -153,7 +130,7 @@ def get_service(client_id: str, secret: str, token: str) -> Resource:
         token_uri="https://oauth2.googleapis.com/token",
         client_id=client_id,
         client_secret=secret,
-        scopes=SCOPES,
+        scopes=["https://www.googleapis.com/auth/blogger"],
     )
     return cast(
         Resource,
@@ -199,7 +176,7 @@ def find_post_by_title(
                 "Found: %s (ID:%s, Status:%s)",
                 title,
                 post["id"],
-                post["status"],
+                post.get("status") or "UNKNOWN",
             )
         return post
     except (google.auth.exceptions.RefreshError, HttpError) as e:
@@ -232,7 +209,7 @@ def publish_post(
     content = _embed_images(content, base)
     logger.debug("Processed content size: %d bytes", len(content))
 
-    svc = get_service(client_id, client_secret, refresh_token)
+    svc: Resource = get_service(client_id, client_secret, refresh_token)
     existing = find_post_by_title(svc, blog_id, title)
 
     body: dict[str, Any] = {"title": title, "content": content}

@@ -1,9 +1,14 @@
+import base64
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
 import google.auth.exceptions  # type: ignore
+from PIL import Image
 
 from blogger.publish import (  # type: ignore
+    _encode_image,
     find_post_by_title,
     publish_post,
 )
@@ -159,6 +164,26 @@ class TestPublish(unittest.TestCase):
         self.assertEqual(result["status"], "SCHEDULED")
 
     @patch("blogger.publish._iter_posts")
+    def test_find_post_by_title_missing_status(
+        self, mock_iterate: MagicMock
+    ) -> None:
+        """Test missing status does not raise during logging."""
+        mock_iterate.return_value = [
+            {"id": "123", "title": "My Post"},
+        ]
+
+        with self.assertLogs("blogger.publish", level="INFO") as cm:
+            result = find_post_by_title(
+                self.mock_service, "blog_id", "My Post"
+            )
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result["id"], "123")
+        self.assertTrue(
+            any("Status:UNKNOWN" in output for output in cm.output)
+        )
+
+    @patch("blogger.publish._iter_posts")
     def test_find_post_by_title_http_error(
         self, mock_iterate: MagicMock
     ) -> None:
@@ -171,6 +196,21 @@ class TestPublish(unittest.TestCase):
 
         with self.assertRaises(HttpError):
             find_post_by_title(self.mock_service, "blog_id", "Test")
+
+    def test_encode_image_outputs_jpeg(self) -> None:
+        """Ensure images are encoded as JPEG data URIs."""
+        with TemporaryDirectory() as tmp_dir:
+            img_path = Path(tmp_dir) / "input.png"
+            image = Image.new("RGBA", (16, 16), (0, 128, 255, 255))
+            image.save(img_path, format="PNG")
+
+            uri = _encode_image(img_path)
+
+            self.assertIsNotNone(uri)
+            self.assertTrue(uri.startswith("data:image/jpeg;base64,"))
+            payload = uri.split(",", 1)[1]
+            raw = base64.b64decode(payload)
+            self.assertTrue(raw.startswith(b"\xff\xd8\xff"))
 
 
 if __name__ == "__main__":

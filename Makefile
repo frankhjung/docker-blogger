@@ -1,6 +1,6 @@
 #!/usr/bin/make
 
-.PHONY: help install check coverage lock format lint test clean
+.PHONY: build-image check clean cleanall coverage format help install lint lint-fix outdated run-container test test-container test-verbose upgrade version
 
 .DEFAULT_GOAL := check
 
@@ -11,9 +11,12 @@ help: ## Show this help message
 install: ## Install dependencies
 	@uv sync
 
-lock: ## Regenerate uv.lock file for reproducible builds
-	@uv lock
-	@echo "Lock file updated. Commit with: git add uv.lock"
+outdated: ## Check for outdated python packages
+	uv tree --outdated
+
+upgrade: ## Regenerate uv.lock file for reproducible builds
+	@uv lock --upgrade
+	@uv sync
 
 format: ## Format code with ruff
 	@uv run ruff format .

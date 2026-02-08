@@ -10,7 +10,8 @@ This action supports:
   it updates the existing content and labels. Note that live or scheduled posts
   are not modified to prevent accidental overwrites.
 - **Embedded Assets**: Local images referenced in your HTML are automatically
-  encoded as Base64 data URIs. Images wider than 640 pixels are resized to fit.
+  encoded as JPEG Base64 data URIs. Images wider than 640 pixels are resized to
+  fit.
 - **Smart Extraction**: If a full HTML document is provided, the action
   intelligently extracts the body content and internal CSS styles. The header
   section is ignored, allowing you to focus on the article content.
@@ -37,7 +38,7 @@ The recommended step to add to your GitHub Actions workflow (e.g.,
 ```yaml
 - name: Publish to Blogspot
   if: success()
-  uses: frankhjung/blogger@v1
+  uses: frankhjung/blogger@v1.1
   with:
     title: "Your Blog Post Title"
     source-file: "path/to/your/article.html"
@@ -53,7 +54,7 @@ Alternatively, to use the image from GHCR, use this instead:
 ```yaml
 - name: publish to blog
   if: success()
-  uses: docker://ghcr.io/frankhjung/blogger:v1
+  uses: docker://ghcr.io/frankhjung/blogger:v1.1
   with:
     args: >-
       --title "Your Blog Post Title"
@@ -98,10 +99,10 @@ The project includes a `Makefile` to simplify common tasks:
 # Install Python dependencies locally
 make install
 
-# Lock Python dependencies
-make lock
+# Lock and upgrade Python dependencies
+make upgrade
 
-# Lint and run unit tests
+# Format, lint, run tests, and generate coverage report
 make check
 
 # Build the Docker image for the Action
@@ -109,6 +110,26 @@ make build-image
 
 # Run the Docker container (sanity check - prints help)
 make test-container
+```
+
+### Python Code Quality
+
+#### To format code with ruff, run:
+
+```bash
+make format
+```
+
+#### To lint code with ruff, run:
+
+```bash
+make lint
+```
+
+#### To run tests with coverage, run:
+
+```bash
+make coverage
 ```
 
 ### Running the Action Locally
@@ -125,6 +146,26 @@ docker run --rm -v $(pwd):/data blogger:latest \
   --client-id "YOUR_CLIENT_ID" \
   --client-secret "YOUR_CLIENT_SECRET" \
   --refresh-token "YOUR_REFRESH_TOKEN"
+```
+
+## Packages
+
+### To install Python dependencies, run:
+
+```bash
+make install
+```
+
+### To check for outdated Python packages, run:
+
+```bash
+make outdated
+```
+
+### To apply updates to Python packages, run:
+
+```bash
+make upgrade
 ```
 
 ## Examples
