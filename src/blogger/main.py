@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def main():
     """CLI entry point to publish a blog post to Blogspot."""
     parser = argparse.ArgumentParser(
-        description="Publish content to Blogspot."
+        prog="blogger", description="Publish content to Blogspot."
     )
     parser.add_argument(
         "--version", action="version", version=f"%(prog)s {__version__}"
@@ -54,10 +54,3 @@ def main():
     except Exception as e:
         logger.error(f"Failed to publish post: {e}")
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO, format="%(levelname)s: %(message)s"
-    )
-    main()

@@ -18,4 +18,4 @@ COPY README.md ./
 RUN uv sync --frozen --no-dev
 
 # Set entrypoint
-ENTRYPOINT ["/app/.venv/bin/python", "-m", "blogger.main"]
+ENTRYPOINT ["/app/.venv/bin/python", "-m", "blogger"]

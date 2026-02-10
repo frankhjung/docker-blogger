@@ -7,11 +7,11 @@ Create a GitHub Action that uses the Blogger API v3 to publish articles
 written in Python, published to the GitHub Container Registry.
 
 ## User Review Required
-> 
+
 > [!IMPORTANT] **Authentication Method**: The Plan mentions "API key". However,
 > publishing posts (write access) requires **OAuth 2.0** or a **Service
 > Account**. An API key is strictly for read-only public data.
-> 
+>
 > **Proposed Solution**: The Action will support **Service Account Credentials**
 > (passed as a JSON string secret) OR **OAuth 2.0 Client Credentials** (Client
 > ID, Client Secret, Refresh Token). I will implement support for a Service
@@ -73,7 +73,7 @@ written in Python, published to the GitHub Container Registry.
 - Install `uv`.
 - Install dependencies.
 - Copy src.
-- Entrypoint: `python -m blogger.main`.
+- Entrypoint: `python -m blogger`.
 
 ### CI/CD
 
@@ -92,7 +92,7 @@ written in Python, published to the GitHub Container Registry.
 
 - **Local Run**:
   - Create a dummy `credentials.json` (user provided).
-  - Run `python -m blogger.main ...` targeting a test blog.
+  - Run `python -m blogger ...` targeting a test blog.
 - **GitHub Action Dry Run**:
   - Since we cannot easily run the Action locally without act, we will rely on
     unit tests and careful code review.

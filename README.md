@@ -38,7 +38,7 @@ The recommended step to add to your GitHub Actions workflow (e.g.,
 ```yaml
 - name: Publish to Blogspot
   if: success()
-  uses: frankhjung/blogger@v1.1
+  uses: frankhjung/blogger@v1.2
   with:
     title: "Your Blog Post Title"
     source-file: "path/to/your/article.html"
@@ -54,7 +54,7 @@ Alternatively, to use the image from GHCR, use this instead:
 ```yaml
 - name: publish to blog
   if: success()
-  uses: docker://ghcr.io/frankhjung/blogger:v1.1
+  uses: docker://ghcr.io/frankhjung/blogger:v1.2
   with:
     args: >-
       --title "Your Blog Post Title"
@@ -114,19 +114,19 @@ make test-container
 
 ### Python Code Quality
 
-#### To format code with ruff, run:
+#### To format code with ruff, run
 
 ```bash
 make format
 ```
 
-#### To lint code with ruff, run:
+#### To lint code with ruff, run
 
 ```bash
 make lint
 ```
 
-#### To run tests with coverage, run:
+#### To run tests with coverage, run
 
 ```bash
 make coverage
@@ -150,19 +150,19 @@ docker run --rm -v $(pwd):/data blogger:latest \
 
 ## Packages
 
-### To install Python dependencies, run:
+### To install Python dependencies, run
 
 ```bash
 make install
 ```
 
-### To check for outdated Python packages, run:
+### To check for outdated Python packages, run
 
 ```bash
 make outdated
 ```
 
-### To apply updates to Python packages, run:
+### To apply updates to Python packages, run
 
 ```bash
 make upgrade

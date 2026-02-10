@@ -13,15 +13,15 @@ on:
       - "uv.lock"
 
 jobs:
-  build-and-push:
-    name: Build and Push Docker Image
+  ghcr:
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
 
     steps:
-      - name: Checkout repository
+      - name: checkout repository
         uses: actions/checkout@v4
 
       - name: Read version from project
@@ -34,20 +34,26 @@ jobs:
           fi
           echo "PUBLISHING_VERSION=${VERSION}" >> ${GITHUB_OUTPUT}
 
-      - name: Log in to the container registry
+      - name: set up qemu
+        uses: docker/setup-qemu-action@v3
+
+      - name: set up docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: log in to github container registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Transform repository name
+      - name: transform repository name
         id: repo_name
         run: |
           IMAGE_NAME=$(echo "${{ github.repository }}" | sed 's/docker-//')
           echo "IMAGE_NAME=${IMAGE_NAME}" >> ${GITHUB_OUTPUT}
 
-      - name: Build and push Docker image
+      - name: build and push
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -56,3 +62,5 @@ jobs:
             ghcr.io/${{ steps.repo_name.outputs.IMAGE_NAME }}:latest
             ghcr.io/${{ steps.repo_name.outputs.IMAGE_NAME }}:${{ github.sha }}
             ghcr.io/${{ steps.repo_name.outputs.IMAGE_NAME }}:${{ steps.version.outputs.PUBLISHING_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

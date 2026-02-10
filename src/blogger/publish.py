@@ -69,17 +69,21 @@ def _encode_image(img_path: Path) -> str | None:
 
 
 def _resize_image_if_needed(img_path: Path) -> bytes:
-    """Resize image to max width 640px and encode as JPEG bytes."""
+    """Resize image to max width 1024px and encode as JPEG bytes."""
+    MAX_WIDTH = 1024
     with Image.open(img_path) as image:
         width, height = image.size
-        if width > 640:
-            new_height = max(1, round(height * (640 / width)))
-            resized = image.resize((640, new_height), Image.Resampling.LANCZOS)
+        if width > MAX_WIDTH:
+            new_height = max(1, round(height * (MAX_WIDTH / width)))
+            resized = image.resize(
+                (MAX_WIDTH, new_height), Image.Resampling.LANCZOS
+            )
             logger.info(
-                "Resized image %s from %dx%d to 640x%d",
+                "Resized image %s from %dx%d to %dx%d",
                 img_path.name,
                 width,
                 height,
+                MAX_WIDTH,
                 new_height,
             )
         else:
@@ -219,7 +223,7 @@ def publish_post(
     if not existing:
         logger.info("Creating new draft...")
         return _exec(
-            svc.posts().insert(blogId=blog_id, body=body, isDraft=is_draft),
+            svc.posts().insert(blogId=blog_id, body=body, isDraft=is_draft),  # type: ignore
             "create",
         )
 
@@ -231,6 +235,6 @@ def publish_post(
 
     logger.info("Updating existing draft: %s", existing["id"])
     return _exec(
-        svc.posts().update(blogId=blog_id, postId=existing["id"], body=body),
+        svc.posts().update(blogId=blog_id, postId=existing["id"], body=body),  # type: ignore
         "update",
     )
