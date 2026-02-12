@@ -69,8 +69,8 @@ def _encode_image(img_path: Path) -> str | None:
 
 
 def _resize_image_if_needed(img_path: Path) -> bytes:
-    """Resize image to max width 1024px and encode as JPEG bytes."""
-    MAX_WIDTH = 1024
+    """Resize image to max width 1600px and encode as JPEG bytes."""
+    MAX_WIDTH = 1600  # recommended for Blogger
     with Image.open(img_path) as image:
         width, height = image.size
         if width > MAX_WIDTH:

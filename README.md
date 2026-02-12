@@ -10,7 +10,7 @@ This action supports:
   it updates the existing content and labels. Note that live or scheduled posts
   are not modified to prevent accidental overwrites.
 - **Embedded Assets**: Local images referenced in your HTML are automatically
-  encoded as JPEG Base64 data URIs. Images wider than 640 pixels are resized to
+  encoded as JPEG Base64 data URIs. Images wider than 1600 pixels are resized to
   fit.
 - **Smart Extraction**: If a full HTML document is provided, the action
   intelligently extracts the body content and internal CSS styles. The header
@@ -38,7 +38,7 @@ The recommended step to add to your GitHub Actions workflow (e.g.,
 ```yaml
 - name: Publish to Blogspot
   if: success()
-  uses: frankhjung/blogger@v1.2
+  uses: frankhjung/blogger@v1.3
   with:
     title: "Your Blog Post Title"
     source-file: "path/to/your/article.html"
@@ -54,7 +54,7 @@ Alternatively, to use the image from GHCR, use this instead:
 ```yaml
 - name: publish to blog
   if: success()
-  uses: docker://ghcr.io/frankhjung/blogger:v1.2
+  uses: docker://ghcr.io/frankhjung/blogger:v1.3
   with:
     args: >-
       --title "Your Blog Post Title"

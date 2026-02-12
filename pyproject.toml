@@ -1,6 +1,6 @@
 [project]
 name = "blogger"
-version = "v1.2"
+version = "v1.3"
 description = "Utility to publish a blog to Blogspot"
 readme = "README.md"
 requires-python = ">=3.9,<4"
