@@ -2,7 +2,10 @@
 
 .PHONY: build-image check clean cleanall coverage format help install lint lint-fix outdated run-container test test-container test-verbose upgrade version
 
-.DEFAULT_GOAL := check
+.DEFAULT_GOAL	:= check
+
+PROJECT_NAME	:= blogger
+DOCKER	?= docker
 
 help: ## Show this help message
 	@echo Available targets:
@@ -49,12 +52,11 @@ clean: ## Clean build artifacts
 cleanall: clean ## Clean all generated files including venv
 	@$(RM) -rf .venv
 
-# Docker targets
 build-image: ## Build the Docker image
-	@docker build -t blogger .
+	@$(DOCKER) build -t $(PROJECT_NAME) .
 
 run-container: ## Run the Docker container (requires env vars or args)
-	@docker run --rm blogger \
+	@$(DOCKER) run --rm $(PROJECT_NAME) \
 		--source-file /data/public.index.html \
 		--title "Post Title" \
 		--labels "label1,label2" \
@@ -64,7 +66,23 @@ run-container: ## Run the Docker container (requires env vars or args)
 		--refresh-token $(REFRESH_TOKEN)
 
 test-container: build-image ## Test the Docker image (sanity check)
-	@docker run --rm blogger --help
+	@$(DOCKER) run --rm $(PROJECT_NAME) --help
+
+images: ## List local images for this project
+	@$(DOCKER) image ls $(PROJECT_NAME)
+
+doctor: ## Show Docker context, builder, and project images
+	@echo "== Docker context =="
+	@$(DOCKER) context show
+	@echo
+	@echo "== Docker contexts =="
+	@$(DOCKER) context ls
+	@echo
+	@echo "== Buildx builders =="
+	@$(DOCKER) buildx ls
+	@echo
+	@echo "== Project images =="
+	@$(DOCKER) image ls $(PROJECT_NAME)
 
 version: build-image ## Show container version
-	@docker run --rm blogger --version
+	@$(DOCKER) run --rm $(PROJECT_NAME) --version
