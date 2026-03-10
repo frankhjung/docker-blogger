@@ -31,8 +31,9 @@ class TestPublish(unittest.TestCase):
         result = find_post_by_title(self.mock_service, "blog_id", "My Post")
 
         # Verify
-        self.assertEqual(result["id"], "123")
-        self.assertEqual(result["title"], "My Post")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["id"], "123")  # type: ignore
+        self.assertEqual(result["title"], "My Post")  # type: ignore
 
     @patch("blogger.publish._iter_posts")
     def test_find_post_by_title_not_found(
@@ -160,8 +161,8 @@ class TestPublish(unittest.TestCase):
 
         # Verify - scheduled posts are now found and returned
         self.assertIsNotNone(result)
-        self.assertEqual(result["id"], "123")
-        self.assertEqual(result["status"], "SCHEDULED")
+        self.assertEqual(result["id"], "123")  # type: ignore
+        self.assertEqual(result["status"], "SCHEDULED")  # type: ignore
 
     @patch("blogger.publish._iter_posts")
     def test_find_post_by_title_missing_status(
@@ -178,7 +179,7 @@ class TestPublish(unittest.TestCase):
             )
 
         self.assertIsNotNone(result)
-        self.assertEqual(result["id"], "123")
+        self.assertEqual(result["id"], "123")  # type: ignore
         self.assertTrue(
             any("Status:UNKNOWN" in output for output in cm.output)
         )
@@ -207,10 +208,36 @@ class TestPublish(unittest.TestCase):
             uri = _encode_image(img_path)
 
             self.assertIsNotNone(uri)
-            self.assertTrue(uri.startswith("data:image/jpeg;base64,"))
-            payload = uri.split(",", 1)[1]
+            self.assertTrue(uri.startswith("data:image/jpeg;base64,"))  # type: ignore
+            payload = uri.split(",", 1)[1]  # type: ignore
             raw = base64.b64decode(payload)
             self.assertTrue(raw.startswith(b"\xff\xd8\xff"))
+
+    @patch("blogger.publish.get_service")
+    @patch("blogger.publish._iter_posts")
+    def test_publish_post_removes_style_tags(
+        self, mock_iterate: MagicMock, mock_get_service: MagicMock
+    ) -> None:
+        """Ensure style blocks are stripped before creating a post."""
+        mock_get_service.return_value = self.mock_service
+        mock_iterate.return_value = []
+
+        html = (
+            "<html><head><style>.x{color:red;}</style></head>"
+            "<body><p>Hello</p></body></html>"
+        )
+
+        publish_post(
+            "client_id",
+            "client_secret",
+            "refresh_token",
+            "blog_id",
+            "Styled Post",
+            html,
+        )
+
+        _, kwargs = self.mock_posts.insert.call_args
+        self.assertEqual(kwargs["body"]["content"], "<p>Hello</p>")
 
 
 if __name__ == "__main__":

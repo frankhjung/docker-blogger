@@ -27,12 +27,12 @@ jobs:
       - name: Read version from project
         id: version
         run: |
-          VERSION=$(grep -oP '__version__\s*=\s*"\K[^"]+' src/blogger/__init__.py)
+          VERSION=$(PYTHONPATH=src python -c "from blogger import __version__; print(__version__)")
           if [ -z "${VERSION}" ]; then
-            echo "::error::Could not extract version from src/blogger/__init__.py"
+            echo "::error::Could not read version by importing blogger.__version__ with PYTHONPATH=src"
             exit 1
           fi
-          echo "PUBLISHING_VERSION=${VERSION}" >> ${GITHUB_OUTPUT}
+          echo "PUBLISHING_VERSION=${VERSION}" >> "${GITHUB_OUTPUT}"
 
       - name: set up qemu
         uses: docker/setup-qemu-action@v3
