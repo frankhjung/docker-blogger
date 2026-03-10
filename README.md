@@ -13,7 +13,7 @@ This action supports:
   encoded as JPEG Base64 data URIs. Images wider than 1600 pixels are resized to
   fit.
 - **Smart Extraction**: If a full HTML document is provided, the action
-  intelligently extracts the body content and internal CSS styles. The header
+  intelligently extracts the body content and removes `<style>` tags. The header
   section is ignored, allowing you to focus on the article content.
 - **OAuth 2.0**: Secure authentication using Google OAuth 2.0 Refresh Tokens.
 
@@ -38,7 +38,7 @@ The recommended step to add to your GitHub Actions workflow (e.g.,
 ```yaml
 - name: Publish to Blogspot
   if: success()
-  uses: frankhjung/blogger@v1.3
+  uses: frankhjung/blogger@1.4
   with:
     title: "Your Blog Post Title"
     source-file: "path/to/your/article.html"
@@ -54,7 +54,7 @@ Alternatively, to use the image from GHCR, use this instead:
 ```yaml
 - name: publish to blog
   if: success()
-  uses: docker://ghcr.io/frankhjung/blogger:v1.3
+  uses: docker://ghcr.io/frankhjung/blogger:1.4
   with:
     args: >-
       --title "Your Blog Post Title"

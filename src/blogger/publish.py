@@ -112,16 +112,14 @@ def _embed_images(html: str, base: Path | None) -> str:
     soup = BeautifulSoup(html, "html.parser")
     for header in soup.find_all("header"):
         header.decompose()
+    for style in soup.find_all("style"):
+        style.decompose()
     for img in soup.find_all("img"):
         _process_img(img, base or Path.cwd())
 
-    # If input is a full HTML document, extract body and styles.
+    # If input is a full HTML document, publish body only.
     if soup.body:
-        content: list[str] = []
-        if soup.head:
-            content.extend(str(s) for s in soup.head.find_all("style"))
-        content.append(soup.body.decode_contents())
-        return "".join(content)
+        return soup.body.decode_contents()
 
     return str(soup)
 

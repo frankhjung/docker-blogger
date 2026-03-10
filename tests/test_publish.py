@@ -212,6 +212,32 @@ class TestPublish(unittest.TestCase):
             raw = base64.b64decode(payload)
             self.assertTrue(raw.startswith(b"\xff\xd8\xff"))
 
+    @patch("blogger.publish.get_service")
+    @patch("blogger.publish._iter_posts")
+    def test_publish_post_removes_style_tags(
+        self, mock_iterate: MagicMock, mock_get_service: MagicMock
+    ) -> None:
+        """Ensure style blocks are stripped before creating a post."""
+        mock_get_service.return_value = self.mock_service
+        mock_iterate.return_value = []
+
+        html = (
+            "<html><head><style>.x{color:red;}</style></head>"
+            "<body><p>Hello</p></body></html>"
+        )
+
+        publish_post(
+            "client_id",
+            "client_secret",
+            "refresh_token",
+            "blog_id",
+            "Styled Post",
+            html,
+        )
+
+        _, kwargs = self.mock_posts.insert.call_args
+        self.assertEqual(kwargs["body"]["content"], "<p>Hello</p>")
+
 
 if __name__ == "__main__":
     unittest.main()
